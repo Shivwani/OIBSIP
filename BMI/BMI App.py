@@ -60,12 +60,13 @@ class BMIApp:
         self.username_var = tk.StringVar()
         self.password_var = tk.StringVar()
 
+
         # Call the login page automatically
         self.login()
 
     def login(self):
         # Set background image for the login page
-        background_image_intro = Image.open("C:/Users/SHIVWANI/OneDrive/Desktop/SYBSCIT/OIBSIP/bmi.jpg")
+        background_image_intro = Image.open("C:/Users/SHIVWANI/OneDrive/Desktop/SYBSCIT/OIBSIP/BMI/bmi.jpg")
         background_image_intro = background_image_intro.resize(
             (self.window.winfo_screenwidth(), self.window.winfo_screenheight()), Image.BOX
         )
@@ -78,13 +79,13 @@ class BMIApp:
         bg_label.place(relx=0, rely=0, relwidth=1, relheight=1)
 
         label_intro = tk.Label(
-            self.window, text="", font=("Helvetica", 16, "bold")
+            self.window, text="", font=("Comic sans ms", 16, "bold")
         )
         label_intro.place(relx=0.5, rely=0.4, anchor="s")
 
         # Center the label vertically and horizontally
         heading_label = tk.Label(
-            self.window, 
+            self.window,
             text="Welcome to the BMI Tracker Application!\n"
                  "This application helps you track your BMI over time.\n"
                  "To get started, please enter your weight and height,\n"
@@ -115,21 +116,20 @@ class BMIApp:
 
         # Use the custom style for the ttk.Buttons
         login_button = ttk.Button(
-            entry_frame, text="Login", command=self.verify_login, style="TButton", padding=(50, 5)
+            entry_frame, text="Login", command=self.verify_login, style="TButton", padding=(10, 5)
         )
         login_button.grid(row=2, column=0, pady=10, columnspan=2)  # Center the button horizontally
 
         # Create a Register button to register a new user
         register_button = ttk.Button(
-            entry_frame, text="Register", command=self.register_user, style="TButton", padding=(20, 5)
+            entry_frame, text="Register", command=self.register_user, style="TButton", padding=(10, 5)
         )
         register_button.grid(row=3, column=0, pady=10, columnspan=2)  # Center the button horizontally
 
-        # Store the login page for later destruction
-        self.login_page = self.window
-
+        
         # Show the login page
         self.window.mainloop()
+
 
     def register_user(self):
         # Fetch the entered username and password
@@ -178,9 +178,10 @@ class BMIApp:
         messagebox.showerror("Login Error", "Invalid username or password")
 
 
-    def show_frame(self,user_id):
+    def show_frame(self, user_id):
         # Hide the intro page
-        self.login_page.withdraw()
+        if self.login_page:
+            self.login_page.withdraw()
 
         # Show the main BMI calculator page and pass the current_user_id
         self.create_main_page(user_id)
@@ -194,13 +195,13 @@ class BMIApp:
         main_page.geometry(f"{main_page.winfo_screenwidth()}x{main_page.winfo_screenheight()}")
 
         # Font settings
-        font_style = ("Helvetica", 12)
+        font_style = ("Comic sans ms", 12)
 
         # Set the background color to beige
         main_page.configure(bg="beige")
 
         # Add a heading for the main BMI calculator page
-        heading_label_main = tk.Label(main_page, text="BMI Calculator", font=("Helvetica", 34, "bold"))
+        heading_label_main = tk.Label(main_page, text="BMI Calculator", font=("Comic sans ms", 34, "bold"))
         heading_label_main.pack(pady=10)
 
         space_frame_main = tk.Frame(main_page, height=50)
@@ -275,6 +276,8 @@ class BMIApp:
             messagebox.showinfo("BMI Result", f"Your BMI is: {bmi}\nCategory: {category}")
         except ValueError:
             messagebox.showerror("Error", "Please enter valid weight and height.")
+            return  # Add this line to exit the function when an error occurs
+
 
     def save_data(self):
         try:
@@ -344,10 +347,11 @@ class BMIApp:
             return "Underweight"
 
     def initialize_plot(self):
-        # Initialize the plot with default values
+        # Create a new figure each time
+        self.fig, self.ax = plt.subplots()
         self.ax.set(xlabel='Timestamp', ylabel='BMI', title='BMI Trend')
         self.ax.grid()
-
+        
         # Set x-axis tick locations and labels
         self.ax.xaxis.set_major_locator(mdates.AutoDateLocator())
         self.ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
@@ -355,6 +359,7 @@ class BMIApp:
 
         # Draw the initial plot
         self.canvas.draw()
+
 
     def show_bmi_trend(self):
         try:
@@ -483,6 +488,7 @@ class BMIApp:
             messagebox.showerror("Error", "Please enter valid record ID, weight, and height.")
 
 
+        
     def delete_all_records(self):
         confirmation = messagebox.askyesno("Confirmation", "Are you sure you want to delete all records?")
         if confirmation:
@@ -498,24 +504,31 @@ class BMIApp:
             db.commit()
             messagebox.showinfo("Success", "All records deleted successfully.")
 
+
     def on_closing(self):
-        # Handle any cleanup or confirmation before closing the application
-        # For example, you might want to ask the user if they are sure they want to exit
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
             # Close the database connection
             cursor.close()
             db.close()
 
-            # Destroy the main page if it exists
-            if hasattr(self, 'main_page') and self.main_page:
-                self.main_page.destroy()
+            # Destroy the login page if it exists
+            if self.login_page:
+                self.login_page.destroy()
 
-            # Destroy the root window
-            self.window.destroy()
+            # Destroy the main page if it exists
+            if hasattr(self, 'main_page') and getattr(self, 'main_page', None):
+                # Check if the main_page has already been destroyed
+                if self.main_page.winfo_exists():
+                    self.main_page.destroy()
+
+            # Destroy the root window if it exists
+            if getattr(self, 'window', None):
+                # Check if the root window has already been destroyed
+                if self.window.winfo_exists():
+                    self.window.destroy()
 
             # Exit the application
             sys.exit()
-
 
 
 if __name__ == "__main__":
